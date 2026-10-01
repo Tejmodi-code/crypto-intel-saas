@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas Institutional Quantitative Execution Terminal</title>
+<script src="https://s3.tradingview.com/tv.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-main: #06090e;
+    --bg-panel: #0b1017;
+    --bg-card: #101621;
+    --bg-hover: #151d2a;
+    --border: #182232;
+    --border-highlight: #223046;
+    --color-primary: #2563eb;
+    --color-cyan: #06b6d4;
+    --color-green: #10b981;
+    --color-amber: #f59e0b;
+    --color-red: #ef4444;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+  }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Top Navigation Ribbon */
+  .header-ribbon {
+    background: #080c13;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .brand-block { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 15px; letter-spacing: 0.5px; }
+  .brand-badge { font-size: 10px; padding: 2px 8px; background: rgba(37,99,235,0.18); border: 1px solid rgba(37,99,235,0.4); border-radius: 4px; color: #60a5fa; font-weight: 700; letter-spacing: 1px; }
+
+  .telemetry-row { display: flex; align-items: center; gap: 24px; font-size: 12px; }
+  .telemetry-cell { display: flex; flex-direction: column; }
+  .telemetry-label { font-size: 9px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px; }
+  .telemetry-val { font-weight: 700; margin-top: 2px; }
+
+  .mode-tag-paper { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 700; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: var(--color-amber); }
+  .mode-tag-live { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 700; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: var(--color-red); }
+
+  .auth-btn-unlocked { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); color: var(--color-green); font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .auth-btn-locked { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: var(--color-red); font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .auth-btn-unlocked:hover, .auth-btn-locked:hover { filter: brightness(1.2); }
+
+  /* Multi-Pane Grid */
+  .grid-layout {
+    display: grid;
+    grid-template-columns: 1.55fr 1.05fr 1.4fr;
+    grid-template-rows: 440px auto;
+    gap: 12px;
+    padding: 14px 18px;
+  }
+
+  /* Panels */
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-header {
+    background: rgba(255,255,255,0.015);
+    border-bottom: 1px solid var(--border);
+    padding: 9px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.75px; color: var(--text-muted); }
+  .panel-body { padding: 12px; flex: 1; overflow-y: auto; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 700; white-space: nowrap; }
+  td { padding: 9px 10px; border-bottom: 1px solid rgba(24,34,50,0.6); vertical-align: middle; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Badges */
+  .tag { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+  .tag-green { background: rgba(16,185,129,0.15); color: var(--color-green); border: 1px solid rgba(16,185,129,0.3); }
+  .tag-blue { background: rgba(37,99,235,0.15); color: #60a5fa; border: 1px solid rgba(37,99,235,0.3); }
+  .tag-amber { background: rgba(245,158,11,0.15); color: var(--color-amber); border: 1px solid rgba(245,158,11,0.3); }
+  .tag-red { background: rgba(239,68,68,0.15); color: var(--color-red); border: 1px solid rgba(239,68,68,0.3); }
+  .tag-gray { background: rgba(100,116,139,0.15); color: var(--text-muted); border: 1px solid rgba(100,116,139,0.3); }
+
+  /* Form Elements */
+  input, select, button {
+    font-family: inherit;
+    font-size: 12px;
+  }
+  .form-control {
+    background: #090d14;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-primary);
+    padding: 7px 10px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-control:focus { border-color: var(--color-primary); }
+
+  .btn {
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: filter 0.15s, opacity 0.15s;
+  }
+  .btn:hover { filter: brightness(1.15); }
+  .btn-primary { background: var(--color-primary); color: #fff; }
+  .btn-danger { background: var(--color-red); color: #fff; }
+  .btn-dark { background: #161e2b; color: var(--text-secondary); border: 1px solid var(--border); }
+  .btn-sm { padding: 4px 8px; font-size: 11px; }
+
+  /* Modal */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(3px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-card {
+    background: #0c1119;
+    border: 1px solid var(--border-highlight);
+    border-radius: 8px;
+    width: 440px;
+    padding: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 10px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header Ribbon -->
+<header class="header-ribbon">
+  <div class="brand-block">
+    <span class="mono" style="font-size:16px; font-weight:800; color:#fff;">ATLAS // QUANT</span>
+    <span class="brand-badge">INSTITUTIONAL EXECUTION</span>
+  </div>
+
+  <div class="telemetry-row">
+    <div class="telemetry-cell">
+      <span class="telemetry-label">Total Equity</span>
+      <span id="stat-total-equity" class="telemetry-val mono text-primary">$10,000.00</span>
+    </div>
+    <div class="telemetry-cell">
+      <span class="telemetry-label">Realized P&L</span>
+      <span id="stat-realized-pnl" class="telemetry-val mono" style="color:var(--color-green)">+$0.00</span>
+    </div>
+    <div class="telemetry-cell">
+      <span class="telemetry-label">Unrealized P&L</span>
+      <span id="stat-unrealized-pnl" class="telemetry-val mono" style="color:var(--color-green)">+$0.00</span>
+    </div>
+    <div class="telemetry-cell">
+      <span class="telemetry-label">Active Exposure</span>
+      <span id="stat-active-positions" class="telemetry-val mono">0 POSITIONS</span>
+    </div>
+    <div class="telemetry-cell">
+      <span class="telemetry-label">Execution Broker</span>
+      <span id="stat-broker-tag" class="mode-tag-paper mono">PAPER : BINANCE</span>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:10px;">
+    <button id="auth-status-btn" class="auth-btn-locked mono" onclick="openAuthModal()">
+      <span>🔒 OPERATOR: LOCKED</span>
+    </button>
+    <button class="btn btn-dark btn-sm mono" onclick="openBrokerModal()">⚙ BROKER API</button>
+  </div>
+</header>
+
+<!-- Main Grid Layout -->
+<main class="grid-layout">
+
+  <!-- Left: TradingView Live Chart -->
+  <section class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Institutional Feed // Chart View</span>
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-dark btn-sm mono" onclick="changeChartSymbol('BINANCE:BTCUSDT')">BTC</button>
+        <button class="btn btn-dark btn-sm mono" onclick="changeChartSymbol('BINANCE:ETHUSDT')">ETH</button>
+        <button class="btn btn-dark btn-sm mono" onclick="changeChartSymbol('BINANCE:SOLUSDT')">SOL</button>
+      </div>
+    </div>
+    <div id="tv-chart-container" style="flex:1; width:100%; height:100%;"></div>
+  </section>
+
+  <!-- Middle: Quantitative Strategy Matrix -->
+  <section class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Strategy Engine // Signal Matrix</span>
+      <span class="tag tag-blue mono">LIVE EVALUATION</span>
+    </div>
+    <div class="panel-body" style="padding:0;">
+      <table>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>VWAP Rev.</th>
+            <th>Trend Cont.</th>
+            <th>Signal</th>
+            <th>Conf.</th>
+          </tr>
+        </thead>
+        <tbody id="signals-tbody">
+          <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">Evaluating Strategy Matrix...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Right: Operator Action & Backtesting Console -->
+  <section class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Personal Dashboard // Operator Controls</span>
+      <span id="circuit-breaker-tag" class="tag tag-green mono">CIRCUIT BREAKER: ARMED</span>
+    </div>
+    <div class="panel-body">
+      <div style="margin-bottom:12px;">
+        <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:6px;">Emergency Action Center</div>
+        <button id="flatten-btn" class="btn btn-danger mono" style="width:100%; font-size:11px; padding:8px 0;" onclick="triggerEmergencyFlatten()">
+          ⚠ FLATTEN ALL ACTIVE POSITIONS (EMERGENCY)
+        </button>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Backtest Verification Engine</span>
+          <select id="backtest-strat-select" class="form-control mono" style="width:180px; font-size:11px; padding:3px 6px;" onchange="runBacktestAnalytics()">
+            <option value="VWAP_MEAN_REVERSION">VWAP Mean Reversion</option>
+            <option value="TREND_CONTINUATION">Trend Continuation</option>
+            <option value="DELTA_NEUTRAL_ARB">Delta-Neutral Arbitrage</option>
+          </select>
+        </div>
+
+        <div class="stat-grid" style="margin-top:8px;">
+          <div class="stat-card">
+            <div class="telemetry-label">Win Rate</div>
+            <div id="bt-winrate" class="mono" style="font-size:13px; font-weight:700; color:var(--color-green)">--%</div>
+          </div>
+          <div class="stat-card">
+            <div class="telemetry-label">Profit Factor</div>
+            <div id="bt-profitfactor" class="mono" style="font-size:13px; font-weight:700; color:var(--color-cyan)">--</div>
+          </div>
+          <div class="stat-card">
+            <div class="telemetry-label">Sharpe Ratio</div>
+            <div id="bt-sharpe" class="mono" style="font-size:13px; font-weight:700; color:#fff">--</div>
+          </div>
+          <div class="stat-card">
+            <div class="telemetry-label">Max Drawdown</div>
+            <div id="bt-drawdown" class="mono" style="font-size:13px; font-weight:700; color:var(--color-amber)">--%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom Left & Middle: Active Positions with Dynamic Pattern SL & Target -->
+  <section class="panel" style="grid-column: 1 / 3;">
+    <div class="panel-header">
+      <span class="panel-title">Active Positions & Dynamic Structural Risk</span>
+      <span id="active-pos-badge" class="tag tag-green mono">0 OPEN</span>
+    </div>
+    <div class="panel-body" style="padding:0;">
+      <table>
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Symbol</th>
+            <th>Strategy</th>
+            <th>Side</th>
+            <th>Entry</th>
+            <th>Structural SL</th>
+            <th>Target TP</th>
+            <th>Pattern R:R</th>
+            <th>Unrealized P&L</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="positions-tbody">
+          <tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:24px;">No active positions in portfolio ledger.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Bottom Right: Persistent Execution Blotter (SQLite Audit Trail) -->
+  <section class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Persistent Blotter // SQLite Audit</span>
+      <span class="tag tag-blue mono">100% PERSISTENT</span>
+    </div>
+    <div class="panel-body" style="padding:0;">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Symbol</th>
+            <th>Strategy</th>
+            <th>Entry</th>
+            <th>R:R</th>
+            <th>P&L ($)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="blotter-tbody">
+          <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">Blotter empty.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- Operator Authentication Modal -->
+<div id="auth-modal" class="modal-backdrop">
+  <div class="modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="font-size:14px; font-weight:800; letter-spacing:0.5px;">OPERATOR AUTHENTICATION</h3>
+      <button class="btn btn-dark btn-sm" onclick="closeAuthModal()">✕</button>
+    </div>
+    <p style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">
+      Enter Operator PIN to unlock sensitive broker settings, position overrides, and emergency flattening.
+    </p>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">Operator PIN</label>
+      <input id="operator-pin-input" type="password" class="form-control mono" placeholder="Default: 1234" value="1234" style="font-size:14px;">
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary mono" style="flex:1;" onclick="submitOperatorLogin()">AUTHORIZE SESSION</button>
+      <button class="btn btn-dark mono" onclick="closeAuthModal()">CANCEL</button>
+    </div>
+    <div id="auth-error-msg" style="color:var(--color-red); font-size:11px; margin-top:10px; display:none;"></div>
+  </div>
+</div>
+
+<!-- Broker API Configuration Modal -->
+<div id="broker-modal" class="modal-backdrop">
+  <div class="modal-card" style="width:480px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="font-size:14px; font-weight:800; letter-spacing:0.5px;">BROKER API CONNECTIVITY</h3>
+      <button class="btn btn-dark btn-sm" onclick="closeBrokerModal()">✕</button>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">Exchange</label>
+      <select id="broker-exchange-select" class="form-control mono">
+        <option value="binance">Binance (CCXT)</option>
+        <option value="bybit">Bybit (CCXT)</option>
+        <option value="okx">OKX (CCXT)</option>
+        <option value="kraken">Kraken (CCXT)</option>
+        <option value="coinbase">Coinbase Pro (CCXT)</option>
+      </select>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">Execution Mode</label>
+      <select id="broker-mode-select" class="form-control mono">
+        <option value="PAPER">PAPER EXECUTION (Sandbox / Risk Simulated)</option>
+        <option value="LIVE">LIVE BROKER EXECUTION (Real Capital)</option>
+      </select>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">API Key</label>
+      <input id="broker-api-key" type="password" class="form-control mono" placeholder="Enter exchange API key">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">API Secret</label>
+      <input id="broker-api-secret" type="password" class="form-control mono" placeholder="Enter exchange API secret">
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary mono" style="flex:1;" onclick="submitBrokerConfig()">VERIFY & APPLY CONFIG</button>
+      <button class="btn btn-dark mono" onclick="closeBrokerModal()">CANCEL</button>
+    </div>
+    <div id="broker-status-msg" style="font-size:11px; margin-top:10px; display:none;"></div>
+  </div>
+</div>
+
+<script>
+  let operatorToken = localStorage.getItem("atlas_operator_token") || null;
+  let chartWidget = null;
+
+  // Initialize TradingView Widget
+  function initTradingView(symbol = "BINANCE:BTCUSDT") {
+    const container = document.getElementById("tv-chart-container");
+    container.innerHTML = "";
+    chartWidget = new TradingView.widget({
+      "autosize": true,
+      "symbol": symbol,
+      "interval": "15",
+      "timezone": "Etc/UTC",
+      "theme": "dark",
+      "style": "1",
+      "locale": "en",
+      "toolbar_bg": "#0b1017",
+      "enable_publishing": false,
+      "allow_symbol_change": true,
+      "container_id": "tv-chart-container"
+    });
+  }
+
+  function changeChartSymbol(symbol) {
+    initTradingView(symbol);
+  }
+
+  // Auth Operations
+  function updateAuthBadge() {
+    const btn = document.getElementById("auth-status-btn");
+    if (operatorToken) {
+      btn.className = "auth-btn-unlocked mono";
+      btn.innerHTML = "<span>🔓 OPERATOR: UNLOCKED</span>";
+    } else {
+      btn.className = "auth-btn-locked mono";
+      btn.innerHTML = "<span>🔒 OPERATOR: LOCKED</span>";
+    }
+  }
+
+  function openAuthModal() {
+    document.getElementById("auth-modal").style.display = "flex";
+  }
+  function closeAuthModal() {
+    document.getElementById("auth-modal").style.display = "none";
+    document.getElementById("auth-error-msg").style.display = "none";
+  }
+
+  async function submitOperatorLogin() {
+    const pin = document.getElementById("operator-pin-input").value;
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin })
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        operatorToken = data.token;
+        localStorage.setItem("atlas_operator_token", operatorToken);
+        updateAuthBadge();
+        closeAuthModal();
+      } else {
+        const err = document.getElementById("auth-error-msg");
+        err.innerText = data.detail || "Authentication failed";
+        err.style.display = "block";
+      }
+    } catch (e) {
+      alert("Error contacting auth endpoint: " + e.message);
+    }
+  }
+
+  // Broker Operations
+  function openBrokerModal() {
+    if (!operatorToken) {
+      openAuthModal();
+      return;
+    }
+    document.getElementById("broker-modal").style.display = "flex";
+  }
+  function closeBrokerModal() {
+    document.getElementById("broker-modal").style.display = "none";
+    document.getElementById("broker-status-msg").style.display = "none";
+  }
+
+  async function submitBrokerConfig() {
+    if (!operatorToken) {
+      openAuthModal();
+      return;
+    }
+    const payload = {
+      exchange_id: document.getElementById("broker-exchange-select").value,
+      execution_mode: document.getElementById("broker-mode-select").value,
+      api_key: document.getElementById("broker-api-key").value,
+      api_secret: document.getElementById("broker-api-secret").value
+    };
+
+    try {
+      const res = await fetch("/api/broker/config", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${operatorToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      const msg = document.getElementById("broker-status-msg");
+      msg.style.display = "block";
+      if (res.ok) {
+        msg.style.color = "var(--color-green)";
+        msg.innerText = `Broker Configured: ${data.exchange} (${data.execution_mode})`;
+        setTimeout(() => closeBrokerModal(), 1200);
+      } else {
+        msg.style.color = "var(--color-red)";
+        msg.innerText = data.detail || "Configuration failed";
+      }
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
+  }
+
+  // Emergency Flatten
+  async function triggerEmergencyFlatten() {
+    if (!operatorToken) {
+      openAuthModal();
+      return;
+    }
+    if (!confirm("CONFIRM EMERGENCY FLATTEN: Close all active positions immediately at market?")) {
+      return;
+    }
+    try {
+      const res = await fetch("/api/portfolio/emergency-flatten", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${operatorToken}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Emergency flatten complete: ${data.positions_closed} positions liquidated.`);
+        fetchPortfolio();
+      } else {
+        alert("Flatten error: " + (data.detail || "Failed"));
+      }
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
+  }
+
+  // Close Position
+  async function closeSinglePosition(orderId) {
+    if (!operatorToken) {
+      openAuthModal();
+      return;
+    }
+    try {
+      const res = await fetch("/api/positions/close", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${operatorToken}`
+        },
+        body: JSON.stringify({ order_id: orderId })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fetchPortfolio();
+      } else {
+        alert("Close failed: " + (data.detail || "Error"));
+      }
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
+  }
+
+  // Fetch Strategy Matrix
+  async function fetchStrategyMatrix() {
+    try {
+      const res = await fetch("/api/signals/matrix");
+      const data = await res.json();
+      const tbody = document.getElementById("signals-tbody");
+      tbody.innerHTML = "";
+
+      data.forEach(item => {
+        const vwapSig = item.vwap_reversion;
+        const trendSig = item.trend_continuation;
+        const tagClass = item.composite_consensus === "BUY" ? "tag-green" : "tag-gray";
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td class="mono" style="font-weight:700;">${item.symbol}</td>
+          <td class="mono" style="font-size:11px;">${vwapSig.action}</td>
+          <td class="mono" style="font-size:11px;">${trendSig.action}</td>
+          <td><span class="tag ${tagClass} mono">${item.composite_consensus}</span></td>
+          <td class="mono">${(item.confidence * 100).toFixed(0)}%</td>
+        `;
+        tbody.appendChild(row);
+      });
+    } catch (e) {
+      console.error("Strategy matrix fetch failed", e);
+    }
+  }
+
+  // Fetch Backtest Analytics
+  async function runBacktestAnalytics() {
+    const strat = document.getElementById("backtest-strat-select").value;
+    try {
+      const res = await fetch(`/api/backtest/results?strategy=${strat}`);
+      const data = await res.json();
+      document.getElementById("bt-winrate").innerText = `${data.win_rate_pct}%`;
+      document.getElementById("bt-profitfactor").innerText = data.profit_factor;
+      document.getElementById("bt-sharpe").innerText = data.sharpe_ratio;
+      document.getElementById("bt-drawdown").innerText = `${data.max_drawdown_pct}%`;
+    } catch (e) {
+      console.error("Backtest fetch failed", e);
+    }
+  }
+
+  // Render Telemetry & Tables
+  function updateTelemetryUI(p) {
+    if (!p) return;
+    document.getElementById("stat-total-equity").innerText = `$${p.total_portfolio_equity.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    
+    const realEl = document.getElementById("stat-realized-pnl");
+    realEl.innerText = `${p.realized_pnl_usd >= 0 ? '+' : ''}$${p.realized_pnl_usd.toFixed(2)}`;
+    realEl.style.color = p.realized_pnl_usd >= 0 ? "var(--color-green)" : "var(--color-red)";
+
+    const unrealEl = document.getElementById("stat-unrealized-pnl");
+    unrealEl.innerText = `${p.unrealized_pnl_usd >= 0 ? '+' : ''}$${p.unrealized_pnl_usd.toFixed(2)}`;
+    unrealEl.style.color = p.unrealized_pnl_usd >= 0 ? "var(--color-green)" : "var(--color-red)";
+
+    document.getElementById("stat-active-positions").innerText = `${p.active_positions_count} POSITIONS`;
+    
+    const brokerTag = document.getElementById("stat-broker-tag");
+    brokerTag.className = p.execution_mode === "LIVE" ? "mode-tag-live mono" : "mode-tag-paper mono";
+    brokerTag.innerText = `${p.execution_mode} : ${p.exchange_id}`;
+
+    // Active Positions Table
+    const posBody = document.getElementById("positions-tbody");
+    document.getElementById("active-pos-badge").innerText = `${p.active_positions.length} OPEN`;
+    
+    if (p.active_positions.length === 0) {
+      posBody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:24px;">No active positions in portfolio ledger.</td></tr>`;
+    } else {
+      posBody.innerHTML = "";
+      p.active_positions.forEach(pos => {
+        const row = document.createElement("tr");
+        const pnlColor = pos.pnl_usd >= 0 ? "var(--color-green)" : "var(--color-red)";
+        row.innerHTML = `
+          <td class="mono" style="font-size:11px; color:var(--text-muted);">${pos.order_id.substring(0, 14)}...</td>
+          <td class="mono" style="font-weight:700;">${pos.symbol}</td>
+          <td><span class="tag tag-blue mono">${pos.strategy}</span></td>
+          <td class="mono" style="color:var(--color-green); font-weight:700;">${pos.side}</td>
+          <td class="mono">$${pos.entry_price.toLocaleString()}</td>
+          <td class="mono" style="color:var(--color-red);">$${pos.stop_loss.toLocaleString()}</td>
+          <td class="mono" style="color:var(--color-green);">$${pos.take_profit.toLocaleString()}</td>
+          <td class="mono" style="color:var(--color-cyan); font-weight:700;">${pos.pattern_rr || '1:3.0'}</td>
+          <td class="mono" style="color:${pnlColor}; font-weight:700;">${pos.pnl_usd >= 0 ? '+' : ''}$${pos.pnl_usd.toFixed(2)} (${pos.pnl_pct}%)</td>
+          <td><button class="btn btn-danger btn-sm mono" onclick="closeSinglePosition('${pos.order_id}')">CLOSE</button></td>
+        `;
+        posBody.appendChild(row);
+      });
+    }
+
+    // Blotter Table
+    const blotterBody = document.getElementById("blotter-tbody");
+    if (p.blotter_records && p.blotter_records.length > 0) {
+      blotterBody.innerHTML = "";
+      p.blotter_records.slice(0, 15).forEach(b => {
+        const row = document.createElement("tr");
+        const pnlColor = (b.pnl_usd || 0) >= 0 ? "var(--color-green)" : "var(--color-red)";
+        const timeStr = b.timestamp ? b.timestamp.split("T")[1].substring(0, 8) : "--";
+        row.innerHTML = `
+          <td class="mono" style="font-size:11px; color:var(--text-muted);">${timeStr}</td>
+          <td class="mono" style="font-weight:700;">${b.symbol}</td>
+          <td class="mono" style="font-size:11px;">${b.strategy}</td>
+          <td class="mono">$${(b.entry_price || 0).toLocaleString()}</td>
+          <td class="mono" style="color:var(--color-cyan);">${b.pattern_rr || '1:3.0'}</td>
+          <td class="mono" style="color:${pnlColor}; font-weight:700;">${(b.pnl_usd || 0) >= 0 ? '+' : ''}$${(b.pnl_usd || 0).toFixed(2)}</td>
+          <td><span class="tag ${b.status.includes('ACTIVE') ? 'tag-green' : 'tag-gray'} mono">${b.status}</span></td>
+        `;
+        blotterBody.appendChild(row);
+      });
+    }
+  }
+
+  async function fetchPortfolio() {
+    try {
+      const res = await fetch("/api/portfolio");
+      const data = await res.json();
+      updateTelemetryUI(data);
+    } catch (e) {
+      console.error("Portfolio fetch error", e);
+    }
+  }
+
+  // Live SSE Connection
+  function initSSE() {
+    const sse = new EventSource("/api/stream/live");
+    sse.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.portfolio) {
+          updateTelemetryUI(data.portfolio);
+        }
+      } catch (e) {}
+    };
+    sse.onerror = () => {
+      sse.close();
+      setTimeout(initSSE, 3000);
+    };
+  }
+
+  // Startup Lifecycle
+  window.addEventListener("DOMContentLoaded", () => {
+    initTradingView();
+    updateAuthBadge();
+    fetchPortfolio();
+    fetchStrategyMatrix();
+    runBacktestAnalytics();
+    initSSE();
+    setInterval(fetchStrategyMatrix, 8000);
+  });
+</script>
+</body>
+</html>

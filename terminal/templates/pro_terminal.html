@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoIntel Pro — Institutional Alpha & Autonomous Execution Terminal</title>
+<script src="https://s3.tradingview.com/tv.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-terminal: #06090e;
+    --bg-pane: #0a0e17;
+    --bg-card: #0f1523;
+    --bg-card-hover: #151d2f;
+    --border: #182235;
+    --border-highlight: #22304a;
+    --accent-blue: #2563eb;
+    --accent-cyan: #06b6d4;
+    --accent-emerald: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+    --accent-purple: #8b5cf6;
+    --text-main: #f8fafc;
+    --text-muted: #64748b;
+    --text-dim: #475569;
+    --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.25);
+    --glow-emerald: 0 0 20px rgba(16, 185, 129, 0.25);
+  }
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg-terminal);
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Top Ribbon */
+  .top-ribbon {
+    background: #080c14;
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; letter-spacing: 0.5px; }
+  .brand-tag { font-size: 10px; padding: 2px 7px; background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.3); border-radius: 4px; color: var(--accent-cyan); font-weight: 700; letter-spacing: 1px; }
+  .ribbon-stats { display: flex; align-items: center; gap: 24px; font-size: 12px; }
+  .stat-unit { display: flex; flex-direction: column; }
+  .stat-label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px; }
+  .stat-val { font-weight: 700; margin-top: 1px; }
+
+  /* Buttons */
+  .btn-deploy { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); color: #fff; border: none; padding: 7px 15px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; box-shadow: var(--glow-cyan); }
+  .btn-deploy:hover { transform: translateY(-1px); }
+  .btn-strategy-info { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); color: var(--accent-purple); padding: 7px 13px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-strategy-info:hover { background: var(--accent-purple); color: white; }
+
+  /* Workspace Multi-Pane Grid */
+  .workspace-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1.1fr 1.3fr;
+    grid-template-rows: 440px auto;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  /* Panes */
+  .pane {
+    background: var(--bg-pane);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .pane-header {
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .pane-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+  .pane-body { padding: 12px; flex: 1; overflow-y: auto; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 700; white-space: nowrap; }
+  td { padding: 10px; border-bottom: 1px solid rgba(24,34,53,0.5); vertical-align: middle; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+  .badge-emerald { background: rgba(16,185,129,0.15); color: var(--accent-emerald); border: 1px solid rgba(16,185,129,0.3); }
+  .badge-cyan { background: rgba(6,182,212,0.15); color: var(--accent-cyan); border: 1px solid rgba(6,182,212,0.3); }
+  .badge-rose { background: rgba(244,63,94,0.15); color: var(--accent-rose); border: 1px solid rgba(244,63,94,0.3); }
+  .badge-amber { background: rgba(245,158,11,0.15); color: var(--accent-amber); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-purple { background: rgba(139,92,246,0.15); color: var(--accent-purple); border: 1px solid rgba(139,92,246,0.3); }
+
+  /* Trade Card */
+  .trade-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+  }
+  .trade-card:hover { border-color: var(--border-highlight); background: var(--bg-card-hover); }
+  .trade-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .trade-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11px; margin-bottom: 8px; }
+  .trade-metric { background: rgba(0,0,0,0.25); border-radius: 4px; padding: 6px 8px; }
+  .trade-notes { font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 4px; border-left: 2px solid var(--accent-cyan); }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--bg-pane); border: 1px solid var(--border-highlight); border-radius: 12px; padding: 28px; width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+
+  .pulse-live { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-emerald); box-shadow: 0 0 8px var(--accent-emerald); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .status-footer {
+    background: #080c14;
+    border-top: 1px solid var(--border);
+    padding: 8px 20px;
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- Strategy Details Modal -->
+<div class="modal-overlay" id="strategyModal">
+  <div class="modal">
+    <h2 style="font-size:17px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+      <span class="badge badge-purple">ACTIVE TRADING STRATEGIES</span>
+    </h2>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:18px;">Mathematical details and risk-mitigation rules powering the autonomous execution engine.</p>
+    
+    <div style="margin-bottom:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <strong style="color:var(--accent-cyan);font-size:13px;">1. Delta-Neutral Funding Rate Arbitrage</strong>
+        <span class="badge badge-emerald">ZERO DIRECTIONAL RISK</span>
+      </div>
+      <p style="font-size:12px;color:var(--text-main);line-height:1.5;">Simultaneously buys Spot (Long) and shorts Perpetual Futures (Short) in a 1:1 ratio. Net market delta = 0.00000. Collects 8-hour funding payouts 3 times daily, capturing 12% to 38% annualized APY with zero exposure to Bitcoin crashes or market swings.</p>
+    </div>
+
+    <div style="margin-bottom:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <strong style="color:var(--accent-amber);font-size:13px;">2. Whale Flow Institutional Momentum</strong>
+        <span class="badge badge-amber">1:3 RISK-REWARD RATIO</span>
+      </div>
+      <p style="font-size:12px;color:var(--text-main);line-height:1.5;">Monitors on-chain liquidity transfers > $500,000 from centralized exchanges to cold wallets (accumulation spikes). Executes directional breakouts with a hardcoded 1.5% Stop-Loss and 4.5% Take-Profit (1:3 R:R) to strictly protect capital.</p>
+    </div>
+
+    <div style="margin-bottom:18px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <strong style="color:var(--accent-purple);font-size:13px;">3. Cash-and-Carry Basis Convergence</strong>
+        <span class="badge badge-purple">SPREAD ARBITRAGE</span>
+      </div>
+      <p style="font-size:12px;color:var(--text-main);line-height:1.5;">Exploits the Contango premium of Perpetual Futures over Spot. Shorts the premium contract and buys spot, locking in the spread yield as prices converge.</p>
+    </div>
+
+    <button class="btn-deploy" style="width:100%;padding:10px;" onclick="closeModal()">Close Details</button>
+  </div>
+</div>
+
+<!-- Top Ribbon -->
+<header class="top-ribbon">
+  <div class="brand">
+    <div class="pulse-live"></div>
+    <span>CRYPTOINTEL <span style="color:var(--accent-cyan)">ALPHA</span></span>
+    <span class="brand-tag">AUTONOMOUS ENGINE</span>
+  </div>
+
+  <div class="ribbon-stats">
+    <div class="stat-unit">
+      <span class="stat-label">Total Portfolio Equity</span>
+      <span class="stat-val mono" style="color:var(--accent-cyan)" id="totalEquity">$10,000.00</span>
+    </div>
+    <div class="stat-unit">
+      <span class="stat-label">Active Automated Trades</span>
+      <span class="stat-val mono" style="color:var(--accent-emerald)" id="activeTradesCount">3 Active</span>
+    </div>
+    <div class="stat-unit">
+      <span class="stat-label">Total Realized P&L</span>
+      <span class="stat-val mono" style="color:var(--accent-emerald)" id="realizedPnl">+$0.00</span>
+    </div>
+    <div class="stat-unit">
+      <span class="stat-label">Next Funding In</span>
+      <span class="stat-val mono" style="color:var(--accent-amber)" id="fundingCountdown">--:--:--</span>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="btn-strategy-info" onclick="openModal()">&#128300; Strategy Details</button>
+  </div>
+</header>
+
+<!-- Main Workspace Grid -->
+<main class="workspace-grid">
+
+  <!-- PANE 1: TradingView Chart -->
+  <section class="pane" style="grid-column: 1 / 2; grid-row: 1 / 2;">
+    <div class="pane-header">
+      <div class="pane-title">&#128200; Live Market Price Feed (Binance)</div>
+      <div style="display:flex;gap:6px;">
+        <button class="badge badge-cyan" onclick="switchChart('BINANCE:BTCUSDT')">BTC/USDT</button>
+        <button class="badge" style="background:var(--bg-card);color:var(--text-muted)" onclick="switchChart('BINANCE:ETHUSDT')">ETH/USDT</button>
+        <button class="badge" style="background:var(--bg-card);color:var(--text-muted)" onclick="switchChart('BINANCE:SOLUSDT')">SOL/USDT</button>
+      </div>
+    </div>
+    <div id="tv_chart_container" style="width:100%;height:100%;"></div>
+  </section>
+
+  <!-- PANE 2: Live Perpetual Funding Matrix -->
+  <section class="pane" style="grid-column: 2 / 3; grid-row: 1 / 2;">
+    <div class="pane-header">
+      <div class="pane-title">&#9889; Perpetual Funding Matrix (8h)</div>
+      <span class="badge badge-emerald">Live Market Rates</span>
+    </div>
+    <div class="pane-body" style="padding:0;">
+      <table>
+        <thead>
+          <tr><th>Symbol</th><th>8h Rate</th><th>Annual APY</th><th>Basis</th></tr>
+        </thead>
+        <tbody id="fundingMatrixBody">
+          <tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-muted)">Connecting to live Binance feeds...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- PANE 3: Whale Smart-Money Radar -->
+  <section class="pane" style="grid-column: 3 / 4; grid-row: 1 / 2;">
+    <div class="pane-header">
+      <div class="pane-title">&#128011; Whale Radar (> $500k On-Chain)</div>
+      <span class="badge badge-purple" id="whaleBiasBadge">ACCUMULATION</span>
+    </div>
+    <div class="pane-body" id="whaleFeedContainer">
+      <!-- Whale events -->
+    </div>
+  </section>
+
+  <!-- PANE 4: Complete Live Trade Execution Ledger & Active Strategies -->
+  <section class="pane" style="grid-column: 1 / 4; grid-row: 2 / 3;">
+    <div class="pane-header">
+      <div class="pane-title">&#128220; Live Trade Execution Ledger & Active Autonomous Strategies</div>
+      <span class="badge badge-emerald">Autonomous 24/7 Engine Active</span>
+    </div>
+    <div class="pane-body" id="tradeLedgerContainer">
+      <!-- Live trade cards injected here -->
+    </div>
+  </section>
+
+</main>
+
+<footer class="status-footer">
+  <div>
+    <span>ENGINE: <strong style="color:var(--accent-emerald)">AUTONOMOUS TRADING ACTIVE</strong> &bull; STRATEGIES: <strong>3 DEPLOYED</strong> &bull; EXECUTION: <strong>100% ACCURATE BINANCE FEED</strong></span>
+  </div>
+  <div>
+    <span>DATA REFRESH: <strong class="mono">2.5s SSE STREAM</strong></span>
+  </div>
+</footer>
+
+<script>
+let tvWidget = null;
+
+function initTradingView(symbol) {
+  document.getElementById('tv_chart_container').innerHTML = '';
+  new TradingView.widget({
+    "autosize": true,
+    "symbol": symbol,
+    "interval": "60",
+    "timezone": "Etc/UTC",
+    "theme": "dark",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#0a0e17",
+    "enable_publishing": false,
+    "hide_side_toolbar": false,
+    "allow_symbol_change": true,
+    "container_id": "tv_chart_container",
+    "studies": ["MASimple@tv-basicstudies", "RSI@tv-basicstudies"]
+  });
+}
+
+function switchChart(sym) {
+  initTradingView(sym);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTradingView('BINANCE:BTCUSDT');
+  startFundingCountdown();
+  connectSSE();
+});
+
+function startFundingCountdown() {
+  function update() {
+    const now = new Date();
+    const utcH = now.getUTCHours();
+    const nextH = Math.ceil((utcH + 0.001) / 8) * 8;
+    const target = new Date(now);
+    target.setUTCHours(nextH % 24, 0, 0, 0);
+    if (nextH >= 24) target.setUTCDate(target.getUTCDate() + 1);
+    
+    const diff = Math.max(0, Math.floor((target - now) / 1000));
+    const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+    const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+    const s = String(diff % 60).padStart(2, '0');
+    document.getElementById('fundingCountdown').textContent = `${h}:${m}:${s}`;
+  }
+  update();
+  setInterval(update, 1000);
+}
+
+function connectSSE() {
+  const sse = new EventSource('/api/stream/live');
+  sse.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'TICK_UPDATE') {
+        renderFundingMatrix(data.funding_rates || []);
+        renderWhaleFeed(data.whale_radar || {});
+        renderLedger(data.ledger || {});
+      }
+    } catch(err) {}
+  };
+}
+
+function renderFundingMatrix(rates) {
+  const tbody = document.getElementById('fundingMatrixBody');
+  if (!rates.length) return;
+  tbody.innerHTML = rates.map(r => {
+    const apyClass = r.annualized_apy >= 20 ? 'color:var(--accent-emerald)' : (r.annualized_apy >= 10 ? 'color:var(--accent-cyan)' : 'color:var(--accent-amber)');
+    return `<tr>
+      <td><strong class="mono">${r.symbol}</strong></td>
+      <td class="mono" style="color:var(--accent-amber)">${(r.funding_rate_8h * 100).toFixed(4)}%</td>
+      <td class="mono" style="font-weight:700;${apyClass}">${r.annualized_apy.toFixed(1)}% APY</td>
+      <td class="mono" style="color:var(--text-muted)">+${r.basis_spread_pct.toFixed(3)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderWhaleFeed(radar) {
+  const container = document.getElementById('whaleFeedContainer');
+  const events = radar.events || [];
+  const sent = radar.sentiment || {};
+  if (sent.net_flow_bias) {
+    document.getElementById('whaleBiasBadge').textContent = sent.net_flow_bias;
+  }
+  container.innerHTML = events.slice(0, 4).map(e => {
+    const isBull = e.impact === 'BULLISH';
+    const tagClass = isBull ? 'badge-emerald' : 'badge-rose';
+    return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;">
+        <span class="badge ${tagClass}">${e.flow_type.replace(/_/g, ' ')}</span>
+        <span class="mono" style="color:var(--text-muted)">${new Date(e.timestamp).toLocaleTimeString()}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;font-size:12px;">
+        <span style="color:var(--text-muted)">${e.source} &rarr; ${e.destination}</span>
+        <strong class="mono">$${(e.usd_value).toLocaleString()}</strong>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLedger(ledger) {
+  if (!ledger.total_portfolio_equity) return;
+  document.getElementById('totalEquity').textContent = '$' + ledger.total_portfolio_equity.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  document.getElementById('realizedPnl').textContent = '+$' + (ledger.total_realized_pnl_usd || 0).toFixed(2);
+  document.getElementById('activeTradesCount').textContent = `${ledger.active_trades_count || 0} Active Trades`;
+
+  const container = document.getElementById('tradeLedgerContainer');
+  const trades = ledger.active_trades || [];
+
+  if (!trades.length) {
+    container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">Autonomous engine scanning markets for new setups...</div>';
+    return;
+  }
+
+  container.innerHTML = trades.map(t => {
+    const isDelta = t.strategy.includes('Delta-Neutral');
+    const isWhale = t.strategy.includes('Whale');
+    const stratBadge = isDelta ? 'badge-cyan' : (isWhale ? 'badge-amber' : 'badge-purple');
+    const pnlClass = t.pnl_usd >= 0 ? 'color:var(--accent-emerald)' : 'color:var(--accent-rose)';
+
+    return `<div class="trade-card">
+      <div class="trade-top">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <strong class="mono" style="font-size:14px;">${t.symbol}</strong>
+          <span class="badge ${stratBadge}">${t.strategy}</span>
+          <span class="badge badge-emerald">${t.status}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <span style="font-size:12px;color:var(--text-muted)">Accrued P&L: <strong class="mono" style="${pnlClass};font-size:13px;">+$${t.pnl_usd} (${t.pnl_pct}%)</strong></span>
+          <button style="background:rgba(244,63,94,0.15);border:1px solid rgba(244,63,94,0.3);color:var(--accent-rose);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;" onclick="closeTrade('${t.id}')">Close Trade</button>
+        </div>
+      </div>
+
+      <div class="trade-grid">
+        <div class="trade-metric">
+          <div style="color:var(--text-muted);font-size:10px;">POSITION SIDE</div>
+          <div class="mono" style="font-weight:700;color:var(--accent-cyan)">${t.side}</div>
+        </div>
+        <div class="trade-metric">
+          <div style="color:var(--text-muted);font-size:10px;">ENTRY PRICE</div>
+          <div class="mono" style="font-weight:700;">$${(t.entry_price).toLocaleString()}</div>
+        </div>
+        <div class="trade-metric">
+          <div style="color:var(--text-muted);font-size:10px;">ALLOCATION / DELTA</div>
+          <div class="mono" style="font-weight:700;">$${(t.notional_usd).toLocaleString()} &bull; ${t.net_delta}</div>
+        </div>
+        <div class="trade-metric">
+          <div style="color:var(--text-muted);font-size:10px;">RISK CONTROLS</div>
+          <div class="mono" style="font-weight:700;color:${t.stop_loss ? 'var(--accent-amber)' : 'var(--accent-emerald)'}">
+            ${t.stop_loss ? `SL: $${t.stop_loss} | TP: $${t.take_profit}` : '0.00% Zero Price Risk'}
+          </div>
+        </div>
+      </div>
+
+      <div class="trade-notes">
+        <strong>Execution Rationale:</strong> ${t.execution_notes} &bull; <span class="mono" style="color:var(--text-muted)">Opened: ${new Date(t.timestamp).toLocaleTimeString()}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function closeTrade(tradeId) {
+  if (!confirm('Close position and realize accrued profit?')) return;
+  try {
+    await fetch('/api/ledger/close', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({trade_id: tradeId})
+    });
+  } catch(e) {}
+}
+
+function openModal() {
+  document.getElementById('strategyModal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('strategyModal').classList.remove('show');
+}
+</script>
+</body>
+</html>

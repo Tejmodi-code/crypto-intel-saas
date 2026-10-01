@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CryptoIntel Pro SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glow-card { background: linear-gradient(135deg, rgba(17,24,39,0.95), rgba(15,23,42,0.9)); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(12px); }
+    </style>
+</head>
+<body class="bg-[#0b0f19] text-gray-100 min-h-screen flex flex-col font-sans">
+    <header class="border-b border-gray-800 bg-[#0d1322]/90 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg"><i class="fa-solid fa-radar text-white text-lg"></i></div>
+                <div>
+                    <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">CryptoIntel Pro SaaS</h1>
+                    <p class="text-xs text-emerald-400 flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span> 100% Autonomous On-Chain Pipeline Active</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="openModal('subscribeModal')" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-medium px-4 py-2 rounded-lg text-sm shadow-md transition"><i class="fa-solid fa-bolt mr-1"></i> Subscribe / Checkout</button>
+                <button onclick="openModal('adminModal')" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3.5 py-2 rounded-lg text-sm transition"><i class="fa-solid fa-shield-halved mr-1"></i> Admin</button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="glow-card rounded-2xl p-5"><p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Monthly Revenue (MRR)</p><h3 id="mrrDisplay" class="text-2xl font-black text-emerald-400 mt-1">$0.00</h3><p class="text-[11px] text-gray-400 mt-1">Paid directly to private wallet</p></div>
+            <div class="glow-card rounded-2xl p-5"><p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Active VIP Subscribers</p><h3 id="subsDisplay" class="text-2xl font-black text-cyan-400 mt-1">0</h3><p class="text-[11px] text-gray-400 mt-1">Autonomous license holders</p></div>
+            <div class="glow-card rounded-2xl p-5"><p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Tracked Volume (24h)</p><h3 id="volumeDisplay" class="text-2xl font-black text-indigo-400 mt-1">$0.00</h3><p class="text-[11px] text-gray-400 mt-1">Institutional transactions</p></div>
+            <div class="glow-card rounded-2xl p-5"><p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Whale Signals Detected</p><h3 id="signalCountDisplay" class="text-2xl font-black text-purple-400 mt-1">0</h3><p class="text-[11px] text-gray-400 mt-1">Real-time on-chain scans</p></div>
+        </div>
+        <div class="bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-purple-950/40 border border-blue-800/40 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3.5"><div class="text-3xl text-cyan-400"><i class="fa-solid fa-hand-holding-dollar"></i></div><div><h4 class="font-bold text-white text-sm">Self-Sustaining Cash Flow Architecture (Micro-SaaS)</h4><p class="text-xs text-gray-300">Generates $29 - $199 / month per subscriber in USDT/SOL directly into your private wallet. Zero risk of market liquidation or trading losses.</p></div></div>
+            <div class="flex items-center gap-2"><span class="bg-blue-900/60 text-blue-300 text-xs px-3 py-1.5 rounded-lg border border-blue-700/50">Merchant EVM: <code class="text-white font-mono text-[11px]">0x71C8...aC4F</code></span></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-4">
+                <div class="flex items-center justify-between"><h2 class="text-lg font-bold text-gray-100 flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-cyan-400"></i> Live On-Chain Whale Radar</h2><span class="text-xs bg-gray-800 px-2.5 py-1 rounded text-gray-300">Live Engine Active</span></div>
+                <div id="signalsContainer" class="space-y-3 max-h-[600px] overflow-y-auto pr-1"><div class="text-center py-12 text-gray-500 text-sm"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-cyan-500 mb-2"></i><p>Scanning blockchain blocks for transactions > $250k USD...</p></div></div>
+            </div>
+            <div class="space-y-4">
+                <h2 class="text-lg font-bold text-gray-100 flex items-center gap-2"><i class="fa-solid fa-gem text-purple-400"></i> VIP Monetization Plans</h2>
+                <div class="space-y-3">
+                    <div class="glow-card rounded-xl p-4 hover:border-blue-500 transition cursor-pointer" onclick="selectTier('STARTER')"><div class="flex justify-between items-center mb-1"><h3 class="font-bold text-blue-400">Starter Signal Tier</h3><span class="text-lg font-black text-white">$29 <span class="text-xs text-gray-400 font-normal">/mo</span></span></div><p class="text-xs text-gray-400 mb-3">Ideal for everyday crypto retail traders.</p><button class="w-full bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white py-1.5 rounded-lg text-xs font-semibold transition">Select Plan</button></div>
+                    <div class="glow-card rounded-xl p-4 border-indigo-500/50 hover:border-indigo-400 transition cursor-pointer relative" onclick="selectTier('PRO')"><div class="flex justify-between items-center mb-1"><h3 class="font-bold text-indigo-400">Pro Quantitative Tier</h3><span class="text-lg font-black text-white">$79 <span class="text-xs text-gray-400 font-normal">/mo</span></span></div><p class="text-xs text-gray-400 mb-3">For active swing traders and quant groups.</p><button class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded-lg text-xs font-semibold transition">Select Plan</button></div>
+                    <div class="glow-card rounded-xl p-4 hover:border-purple-500 transition cursor-pointer" onclick="selectTier('ENTERPRISE')"><div class="flex justify-between items-center mb-1"><h3 class="font-bold text-purple-400">Institutional Tier</h3><span class="text-lg font-black text-white">$199 <span class="text-xs text-gray-400 font-normal">/mo</span></span></div><p class="text-xs text-gray-400 mb-3">For crypto funds & private desks.</p><button class="w-full bg-purple-600/30 hover:bg-purple-600 text-purple-300 hover:text-white py-1.5 rounded-lg text-xs font-semibold transition">Select Plan</button></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div id="subscribeModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glow-card rounded-2xl max-w-md w-full p-6 border border-gray-700 shadow-2xl relative">
+            <button onclick="closeModal('subscribeModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-lg font-bold text-white mb-1"><i class="fa-brands fa-ethereum text-cyan-400"></i> Autonomous Crypto Checkout</h3>
+            <p class="text-xs text-gray-400 mb-4">Send USDT/USDC directly to activate your VIP subscription license.</p>
+            <form id="checkoutForm" onsubmit="handleCheckout(event)" class="space-y-3.5">
+                <div><label class="block text-xs text-gray-400 mb-1">Selected Plan</label><select id="tierSelect" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"><option value="STARTER">Starter Tier ($29/month)</option><option value="PRO" selected>Pro Quantitative Tier ($79/month)</option><option value="ENTERPRISE">Institutional Tier ($199/month)</option></select></div>
+                <div><label class="block text-xs text-gray-400 mb-1">Your Email</label><input type="email" id="userEmail" required placeholder="vip@investor.com" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"></div>
+                <div><label class="block text-xs text-gray-400 mb-1">Your Crypto Wallet Address</label><input type="text" id="userWallet" placeholder="0x..." class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"></div>
+                <div class="bg-gray-900/90 rounded-xl p-3 border border-gray-800"><p class="text-[11px] text-gray-400 font-semibold uppercase">Deposit Address (Polygon/EVM):</p><code class="text-xs text-emerald-400 font-mono">0x71C83648611f77d346b761765c9E45758063aC4F</code></div>
+                <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold py-2.5 rounded-lg text-sm transition">Confirm & Activate License</button>
+            </form>
+            <div id="checkoutSuccess" class="hidden mt-4 p-3 bg-emerald-950/60 border border-emerald-500/50 rounded-xl text-center"><i class="fa-solid fa-circle-check text-emerald-400 text-2xl mb-1"></i><h4 class="font-bold text-white text-sm">Subscription Activated!</h4><p class="text-xs text-gray-300 mt-1">Your VIP Key:</p><div class="mt-1 bg-black/60 p-2 rounded text-cyan-400 font-mono text-xs font-bold" id="issuedKey"></div></div>
+        </div>
+    </div>
+    <div id="adminModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glow-card rounded-2xl max-w-2xl w-full p-6 border border-gray-700 shadow-2xl relative max-h-[85vh] flex flex-col">
+            <button onclick="closeModal('adminModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-lg font-bold text-white mb-1"><i class="fa-solid fa-chart-pie text-cyan-400"></i> SaaS Admin & Subscriber Manager</h3>
+            <p class="text-xs text-gray-400 mb-4">View active license holders and automated cash flow.</p>
+            <div class="overflow-y-auto flex-1 pr-1"><table class="w-full text-left text-xs text-gray-300"><thead class="bg-gray-800 text-gray-400 uppercase text-[10px]"><tr><th class="p-2.5">Subscriber</th><th class="p-2.5">Tier</th><th class="p-2.5">License Key</th><th class="p-2.5">Expires</th><th class="p-2.5">Status</th></tr></thead><tbody id="subscribersTableBody" class="divide-y divide-gray-800"></tbody></table></div>
+        </div>
+    </div>
+    <script>
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); if (id === 'adminModal') loadSubscribers(); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function selectTier(tier) { document.getElementById('tierSelect').value = tier; openModal('subscribeModal'); }
+        async function handleCheckout(e) {
+            e.preventDefault();
+            const tier = document.getElementById('tierSelect').value;
+            const email = document.getElementById('userEmail').value;
+            const wallet = document.getElementById('userWallet').value;
+            try {
+                const res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, tier, wallet_address: wallet }) });
+                const data = await res.json();
+                if (data.success) { document.getElementById('issuedKey').innerText = data.access_key; document.getElementById('checkoutSuccess').classList.remove('hidden'); loadMetrics(); }
+            } catch (err) { alert('Error: ' + err); }
+        }
+        async function loadMetrics() {
+            try {
+                const res = await fetch('/api/metrics');
+                const data = await res.json();
+                document.getElementById('mrrDisplay').innerText = '$' + data.mrr.toLocaleString('en-US', {minimumFractionDigits: 2});
+                document.getElementById('subsDisplay').innerText = data.active_subscribers;
+                document.getElementById('volumeDisplay').innerText = '$' + (data.tracked_volume / 1000000).toFixed(2) + 'M';
+                document.getElementById('signalCountDisplay').innerText = data.total_signals;
+            } catch (e) {}
+        }
+        async function loadSubscribers() {
+            try {
+                const res = await fetch('/api/subscribers');
+                const subs = await res.json();
+                const tbody = document.getElementById('subscribersTableBody');
+                tbody.innerHTML = '';
+                if (subs.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No subscribers yet.</td></tr>'; return; }
+                subs.forEach(s => {
+                    tbody.innerHTML += `<tr class="hover:bg-gray-800/50"><td class="p-2.5 font-medium text-white">${s.email || 'Anonymous'}</td><td class="p-2.5"><span class="bg-blue-900/60 text-blue-300 text-[10px] px-2 py-0.5 rounded font-bold">${s.tier}</span></td><td class="p-2.5 font-mono text-cyan-400">${s.access_key}</td><td class="p-2.5 text-gray-400">${new Date(s.expires_at).toLocaleDateString()}</td><td class="p-2.5"><span class="text-emerald-400 font-semibold">Active</span></td></tr>`;
+                });
+            } catch (e) {}
+        }
+        async function loadRecentSignals() {
+            try {
+                const res = await fetch('/api/signals?limit=15');
+                const signals = await res.json();
+                const container = document.getElementById('signalsContainer');
+                if (signals.length > 0) {
+                    container.innerHTML = '';
+                    signals.forEach(sig => {
+                        const card = document.createElement('div');
+                        card.className = "whale-card glow-card rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition";
+                        const isBullish = (sig.signal_type || '').includes('OUTFLOW');
+                        const isBearish = (sig.signal_type || '').includes('INFLOW');
+                        const tagColor = isBullish ? 'bg-emerald-950/80 text-emerald-300 border-emerald-600/40' : (isBearish ? 'bg-rose-950/80 text-rose-300 border-rose-600/40' : 'bg-cyan-950/80 text-cyan-300 border-cyan-600/40');
+                        card.innerHTML = `<div class="flex items-start justify-between"><div class="flex items-center gap-2"><span class="text-lg">${sig.icon || '🐋'}</span><div><span class="text-xs px-2 py-0.5 rounded border font-semibold ${tagColor}">${sig.signal_type}</span><span class="text-xs text-gray-400 ml-2">${sig.network || 'Ethereum'}</span></div></div><span class="text-sm font-black text-emerald-400">$${(sig.amount_usd).toLocaleString('en-US', {minimumFractionDigits: 2})}</span></div><div class="mt-2 text-xs text-gray-300 grid grid-cols-2 gap-2 bg-black/40 p-2 rounded-lg font-mono"><div><span class="text-gray-500">From:</span> ${sig.from_tag}</div><div><span class="text-gray-500">To:</span> ${sig.to_tag}</div></div><div class="mt-2 flex items-center justify-between text-[11px] text-gray-400"><span>Token: <b class="text-white">${sig.token_symbol || sig.token}</b></span><span class="font-mono text-gray-500">TX: ${(sig.tx_hash || '0x...').substring(0, 14)}...</span></div>`;
+                        container.appendChild(card);
+                    });
+                }
+            } catch (e) {}
+        }
+        setInterval(loadMetrics, 3000);
+        setInterval(loadRecentSignals, 3000);
+        window.onload = () => { loadMetrics(); loadRecentSignals(); };
+    </script>
+</body>
+</html>
